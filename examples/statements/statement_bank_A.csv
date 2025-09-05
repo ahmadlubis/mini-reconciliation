@@ -1,0 +1,7 @@
+unique_identifier,amount,date,description
+BANK_A_1,-150.00,2025-09-01,Payment for INV001 trxID:SYS001
+BANK_A_2,200.50,2025-09-01,Incoming Transfer
+BANK_A_3,-75.00,2025-09-02,Withdrawal ATM Central
+BANK_A_4,-75.00,2025-09-02,Withdrawal ATM Central
+BANK_A_5,-125.00,2025-09-04,Discrepant transaction; should be 120.25
+BANK_A_6,50.00,2025-09-04,Unmatched deposit
