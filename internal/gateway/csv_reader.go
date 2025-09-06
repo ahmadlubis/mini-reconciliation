@@ -113,10 +113,10 @@ func (r *CSVTransactionRepository) GetBankTransactions(ctx context.Context, path
 
 			// Normalize the transaction for easier matching
 			if tx.Amount < 0 {
-				tx.Type = domain.DEBIT
+				tx.Type = domain.TransactionTypeDebit
 				tx.NormalizedAmount = math.Abs(tx.Amount)
 			} else {
-				tx.Type = domain.CREDIT
+				tx.Type = domain.TransactionTypeCredit
 				tx.NormalizedAmount = tx.Amount
 			}
 

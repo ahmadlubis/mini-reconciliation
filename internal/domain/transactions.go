@@ -6,8 +6,8 @@ import "time"
 type TransactionType string
 
 const (
-	DEBIT  TransactionType = "DEBIT"
-	CREDIT TransactionType = "CREDIT"
+	TransactionTypeDebit  TransactionType = "DEBIT"
+	TransactionTypeCredit TransactionType = "CREDIT"
 )
 
 // SystemTransaction represents a transaction from Amartha's internal system.

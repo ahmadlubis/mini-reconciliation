@@ -10,13 +10,6 @@ import (
 	"mini-reconciliation/internal/domain"
 )
 
-// TransactionRepository defines the interface for fetching transaction data.
-// The usecase layer depends on this interface, not on a concrete implementation.
-type TransactionRepository interface {
-	GetSystemTransactions(ctx context.Context, path string) ([]domain.SystemTransaction, error)
-	GetBankTransactions(ctx context.Context, paths []string) ([]domain.BankTransaction, error)
-}
-
 // ReconciliationUseCase orchestrates the reconciliation process.
 type ReconciliationUseCase struct {
 	repo TransactionRepository
@@ -46,8 +39,8 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 
 	report := domain.ReconciliationReport{
 		ReconciliationSummary: domain.Summary{
-			TimeframeStart:                   start.Format("2006-01-02"),
-			TimeframeEnd:                     end.Format("2006-01-02"),
+			TimeframeStart:                   start.Format(time.DateOnly),
+			TimeframeEnd:                     end.Format(time.DateOnly),
 			TotalSystemTransactionsProcessed: len(filteredSystemTx),
 			TotalBankTransactionsProcessed:   len(filteredBankTx),
 		},
@@ -64,8 +57,8 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 	matchedBank := make(map[string]bool)
 
 	// Pass 1: Unique Identifier Matching (trxID in description)
-	for i, bankTx := range filteredBankTx {
-		for j, sysTx := range filteredSystemTx {
+	for _, bankTx := range filteredBankTx {
+		for _, sysTx := range filteredSystemTx {
 			if matchedSystem[sysTx.TrxID] || matchedBank[bankTx.UniqueIdentifier] {
 				continue
 			}
@@ -73,8 +66,6 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 				uc.processMatch(&report, sysTx, bankTx)
 				matchedSystem[sysTx.TrxID] = true
 				matchedBank[bankTx.UniqueIdentifier] = true
-				filteredBankTx[i].Description += " (matched)" // Mark to avoid re-matching
-				filteredSystemTx[j].TrxID += " (matched)"
 			}
 		}
 	}
@@ -122,6 +113,7 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 		}
 	}
 
+	// FIXED: Calculate count AFTER populating unmatched transactions
 	report.UnmatchedTransactions.Count = len(report.UnmatchedTransactions.SystemMissingFromBank) + countBankMapItems(report.UnmatchedTransactions.BankMissingFromSystem)
 
 	return &report, nil
@@ -150,7 +142,7 @@ func filterSystemTransactionsByDate(transactions []domain.SystemTransaction, sta
 	var filtered []domain.SystemTransaction
 	for _, tx := range transactions {
 		txDate := tx.TransactionTime
-		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end.Add(24*time.Hour-time.Nanosecond))) {
+		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end.Add(24*time.Hour-time.Hour))) {
 			filtered = append(filtered, tx)
 		}
 	}
@@ -161,7 +153,8 @@ func filterBankTransactionsByDate(transactions []domain.BankTransaction, start, 
 	var filtered []domain.BankTransaction
 	for _, tx := range transactions {
 		txDate := tx.Date
-		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end)) {
+		// Match the same logic as system transactions for consistency
+		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end.Add(24*time.Hour-time.Nanosecond))) {
 			filtered = append(filtered, tx)
 		}
 	}

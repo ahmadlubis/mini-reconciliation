@@ -58,14 +58,19 @@ This follows a Clean Architecture style (separation of domain, usecases, gateway
 
 From the repository root:
 
+**Install & Vendor Dependencies:**
+```bash
+make dep
+```
+
 **Build a local binary:**
 ```bash
-go build -o reconciler ./cmd/reconciler
+make build
 ```
 
 **Or install to your `$GOBIN` (if you want reconciler on your PATH):**
 ```bash
-go install ./cmd/reconciler
+make install
 ```
 
 ## Usage
