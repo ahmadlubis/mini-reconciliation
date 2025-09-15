@@ -27,3 +27,7 @@ run: build
 clean:
 	go clean
 	rm -f $(BINARY)
+
+## Repository Unit Tests	
+test:
+	GOARCH=amd64 go test -v -race -count=1 ./...

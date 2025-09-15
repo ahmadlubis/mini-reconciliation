@@ -72,19 +72,18 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 
 	// Pass 2 & 3: Exact and Group Matching
 	// Create a map to group transactions by a composite key of date, type, and amount.
-	type groupKey string
-	systemMap := make(map[groupKey][]domain.SystemTransaction)
-	bankMap := make(map[groupKey][]domain.BankTransaction)
+	systemMap := make(map[string][]domain.SystemTransaction)
+	bankMap := make(map[string][]domain.BankTransaction)
 
 	for _, sysTx := range filteredSystemTx {
 		if !matchedSystem[sysTx.TrxID] {
-			key := groupKey(buildGroupKey(sysTx.TransactionTime, sysTx.Type, sysTx.Amount))
+			key := buildGroupKey(sysTx.TransactionTime, sysTx.Type, sysTx.Amount)
 			systemMap[key] = append(systemMap[key], sysTx)
 		}
 	}
 	for _, bankTx := range filteredBankTx {
 		if !matchedBank[bankTx.UniqueIdentifier] {
-			key := groupKey(buildGroupKey(bankTx.Date, bankTx.Type, bankTx.NormalizedAmount))
+			key := buildGroupKey(bankTx.Date, bankTx.Type, bankTx.NormalizedAmount)
 			bankMap[key] = append(bankMap[key], bankTx)
 		}
 	}
@@ -113,7 +112,7 @@ func (uc *ReconciliationUseCase) Reconcile(ctx context.Context, systemPath strin
 		}
 	}
 
-	// FIXED: Calculate count AFTER populating unmatched transactions
+	// Calculate count AFTER populating unmatched transactions
 	report.UnmatchedTransactions.Count = len(report.UnmatchedTransactions.SystemMissingFromBank) + countBankMapItems(report.UnmatchedTransactions.BankMissingFromSystem)
 
 	return &report, nil
@@ -142,7 +141,7 @@ func filterSystemTransactionsByDate(transactions []domain.SystemTransaction, sta
 	var filtered []domain.SystemTransaction
 	for _, tx := range transactions {
 		txDate := tx.TransactionTime
-		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end.Add(24*time.Hour-time.Hour))) {
+		if (txDate.After(start.Add(-time.Nanosecond))) && (txDate.Before(end.Add(24*time.Hour - time.Nanosecond))) {
 			filtered = append(filtered, tx)
 		}
 	}
@@ -154,7 +153,7 @@ func filterBankTransactionsByDate(transactions []domain.BankTransaction, start, 
 	for _, tx := range transactions {
 		txDate := tx.Date
 		// Match the same logic as system transactions for consistency
-		if (txDate.Equal(start) || txDate.After(start)) && (txDate.Equal(end) || txDate.Before(end.Add(24*time.Hour-time.Nanosecond))) {
+		if (txDate.After(start.Add(-time.Nanosecond))) && (txDate.Before(end.Add(24*time.Hour - time.Nanosecond))) {
 			filtered = append(filtered, tx)
 		}
 	}
